@@ -1,7 +1,9 @@
 package model
 
-type User struct {
-	ID    int
-	Name  string
-	Email string
+import "time"
+
+type Comment struct {
+	ID   int       `json:"id"`
+	Text string    `json:"text"`
+	Date time.Time `json:"date"`
 }

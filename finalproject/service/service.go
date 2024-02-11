@@ -2,83 +2,103 @@ package service
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
 
 	"github.com/x6txy/go2024/finalproject/model"
 )
 
-type UserService struct {
+type CommentService struct {
 	DB *sql.DB
 }
 
-func NewUserService(db *sql.DB) *UserService {
-	return &UserService{
+func NewCommentService(db *sql.DB) *CommentService {
+	return &CommentService{
 		DB: db,
 	}
 }
 
-func (us *UserService) CreateUser(user *model.User) (int, error) {
-	if err := us.createUsersTableIfNotExists(); err != nil {
-		log.Println("Error creating 'users' table:", err)
-		return 0, err
+func (cs *CommentService) CreateComment(comment *model.Comment) (int, error) {
+	if err := cs.ensureCommentsTableExists(); err != nil {
+		return 0, fmt.Errorf("failed to ensure comments table exists: %v", err)
 	}
 
-	query := "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id"
-	var userID int
-	err := us.DB.QueryRow(query, user.Name, user.Email).Scan(&userID)
+	const query = "INSERT INTO comments (text, date) VALUES ($1, $2) RETURNING id"
+	var commentID int
+	err := cs.DB.QueryRow(query, comment.Text, comment.Date).Scan(&commentID)
 	if err != nil {
-		log.Println("Error creating user:", err)
-		return 0, err
+		return 0, fmt.Errorf("failed to create comment: %v", err)
 	}
-	return userID, nil
+
+	return commentID, nil
 }
 
-func (us *UserService) GetUserByID(userID int) (*model.User, error) {
-	query := "SELECT id, name, email FROM users WHERE id = $1"
-	user := &model.User{}
-	err := us.DB.QueryRow(query, userID).Scan(&user.ID, &user.Name, &user.Email)
+func (cs *CommentService) GetCommentByID(commentID int) (*model.Comment, error) {
+	const query = "SELECT id, text, date FROM comments WHERE id = $1"
+	comment := &model.Comment{}
+	err := cs.DB.QueryRow(query, commentID).Scan(&comment.ID, &comment.Text, &comment.Date)
 	if err != nil {
-		log.Println("Error retrieving user:", err)
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("comment not found with ID %d", commentID)
+		}
+		return nil, fmt.Errorf("failed to retrieve comment: %v", err)
 	}
-	return user, nil
+
+	return comment, nil
 }
 
-func (us *UserService) GetAllUsers() ([]*model.User, error) {
-	query := "SELECT id, name, email FROM users"
-	rows, err := us.DB.Query(query)
+func (cs *CommentService) GetAllComments() ([]*model.Comment, error) {
+	const query = "SELECT id, text, date FROM comments"
+	rows, err := cs.DB.Query(query)
 	if err != nil {
-		log.Println("Error retrieving users:", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to retrieve comments: %v", err)
 	}
 	defer rows.Close()
 
-	var users []*model.User
+	var comments []*model.Comment
 	for rows.Next() {
-		user := &model.User{}
-		err := rows.Scan(&user.ID, &user.Name, &user.Email)
+		comment := &model.Comment{}
+		err := rows.Scan(&comment.ID, &comment.Text, &comment.Date)
 		if err != nil {
-			log.Println("Error scanning user row:", err)
-			return nil, err
+			return nil, fmt.Errorf("failed to scan comment row: %v", err)
 		}
-		users = append(users, user)
+		comments = append(comments, comment)
 	}
 
-	return users, nil
+	return comments, nil
 }
 
-func (us *UserService) createUsersTableIfNotExists() error {
-	query := `
-		CREATE TABLE IF NOT EXISTS users (
+func (cs *CommentService) ensureCommentsTableExists() error {
+	const query = `
+		CREATE TABLE IF NOT EXISTS comments (
 			id SERIAL PRIMARY KEY,
-			name VARCHAR(255),
-			email VARCHAR(255)
+			text TEXT,
+			date TIMESTAMP
 		);
 	`
-	_, err := us.DB.Exec(query)
+	_, err := cs.DB.Exec(query)
 	if err != nil {
-		log.Println("Error creating 'users' table:", err)
-		return err
+		return fmt.Errorf("failed to create 'comments' table: %v", err)
 	}
+
+	return nil
+}
+
+func (cs *CommentService) DeleteCommentByID(commentID int) error {
+	const query = "DELETE FROM comments WHERE id = $1"
+	_, err := cs.DB.Exec(query, commentID)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment: %v", err)
+	}
+
+	return nil
+}
+
+func (cs *CommentService) UpdateComment(comment *model.Comment) error {
+	const query = "UPDATE comments SET text = $2, date = $3 WHERE id = $1"
+	_, err := cs.DB.Exec(query, comment.ID, comment.Text, comment.Date)
+	if err != nil {
+		return fmt.Errorf("failed to update comment: %v", err)
+	}
+
 	return nil
 }
