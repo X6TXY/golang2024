@@ -14,5 +14,10 @@ func NewRouter() *mux.Router {
 	r.HandleFunc("/comments/{id}", handler.UpdateComment).Methods("PUT")
 	r.HandleFunc("/comments/{id}", handler.DeleteComment).Methods("DELETE")
 
+	r.HandleFunc("/register", handler.RegisterUser).Methods("POST")
+	r.HandleFunc("/login", handler.LoginUser).Methods("POST")
+
+	r.HandleFunc("/users", handler.AllUsersHandler).Methods("GET")
+
 	return r
 }

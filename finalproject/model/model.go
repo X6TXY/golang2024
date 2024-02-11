@@ -7,3 +7,9 @@ type Comment struct {
 	Text string    `json:"text"`
 	Date time.Time `json:"date"`
 }
+
+type User struct {
+    ID       int    `json:"id"`
+    Username string `json:"username"`
+    Password []byte `json:"password"` 
+}
