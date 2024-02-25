@@ -1,10 +1,9 @@
 # Final Project Golang 2024 Spring. Go Blog with Comments and Authentication
 
-## Author
-Toleu Bahauddin 22B030598
-
-
 This project is a simple blog application implemented in Go (Golang) that includes features such as CRUD operations for articles, comments, and user authentication.
+## Author
+`Toleu Bahauddin 22B030598`
+
 
 ## Database Structure
 
