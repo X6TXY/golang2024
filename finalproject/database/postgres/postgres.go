@@ -1,3 +1,5 @@
+//Connection for database and maninulation of database
+
 package postgres
 
 import (
@@ -14,7 +16,7 @@ func InitDB() *sql.DB {
 	password := getEnv("DB_PASSWORD")
 	sslmode := getEnv("DB_SSLMODE")
 
-	connStr := "user=" + user + " dbname=" + dbname + " password=" + password +  " sslmode=" + sslmode
+	connStr := "user=" + user + " dbname=" + dbname + " password=" + password + " sslmode=" + sslmode
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {

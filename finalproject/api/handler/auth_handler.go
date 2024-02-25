@@ -1,3 +1,5 @@
+//Authentication handler for authentication
+
 package handler
 
 import (
@@ -49,7 +51,6 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Write(jsonResponse)
 }
-
 func LoginUser(w http.ResponseWriter, r *http.Request) {
 	var loginRequest struct {
 		Username string `json:"username"`
@@ -81,7 +82,6 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Authentication successful"))
 }
-
 func getUserServiceFromContext(r *http.Request) *service.UserService {
 	if dbPool == nil {
 		dbPool = postgres.InitDB()

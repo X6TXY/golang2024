@@ -1,3 +1,5 @@
+//Handler for CRUD of comments
+
 package handler
 
 import (

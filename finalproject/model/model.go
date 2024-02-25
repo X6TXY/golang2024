@@ -1,3 +1,5 @@
+//Model sructure of the project 
+
 package model
 
 import "time"
