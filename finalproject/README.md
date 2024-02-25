@@ -57,5 +57,5 @@ This project is a simple blog application implemented in Go (Golang) that includ
 - Implementation of roles (e.g., user and administrator).
 - Restrict access to certain operations based on roles.
 
-## Author
+# Author
 Toleu Bahauddin 22B030598
