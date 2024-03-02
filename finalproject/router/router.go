@@ -1,5 +1,3 @@
-// Router interface
-
 package router
 
 import (
@@ -9,17 +7,12 @@ import (
 
 func NewRouter() *mux.Router {
 	r := mux.NewRouter()
+	r.HandleFunc("/posts", handler.CreatePost).Methods("POST")
+	r.HandleFunc("/posts", handler.GetPosts).Methods("GET")
+	r.HandleFunc("/posts/{id}", handler.GetPostById).Methods("GET")
+	r.HandleFunc("/posts/{id}", handler.DeletePostById).Methods("DELETE")
+	r.HandleFunc("/posts/{id}", handler.UpdatePostHandler).Methods("PUT")
 
-	r.HandleFunc("/comments", handler.GetComments).Methods("GET")
-	r.HandleFunc("/comments/{id}", handler.GetComment).Methods("GET")
-	r.HandleFunc("/comments", handler.CreateComment).Methods("POST")
-	r.HandleFunc("/comments/{id}", handler.UpdateComment).Methods("PUT")
-	r.HandleFunc("/comments/{id}", handler.DeleteComment).Methods("DELETE")
-
-	r.HandleFunc("/register", handler.RegisterUser).Methods("POST")
-	r.HandleFunc("/login", handler.LoginUser).Methods("POST")
-
-	r.HandleFunc("/users", handler.AllUsersHandler).Methods("GET")
-
+	
 	return r
 }

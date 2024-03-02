@@ -21,4 +21,4 @@ RUN go build -o ./finalproject/cmd/main ./cmd
 EXPOSE 8080
 
 
-CMD ["dockerize", "-wait", "tcp://postgres:5432", "-timeout", "60s", "./finalproject/cmd/main"]
+CMD ["./finalproject/cmd/main"]

@@ -1,26 +1,3 @@
-package service
-
-import (
-	"database/sql"
-	"fmt"
-	"time"
-
-
-	"github.com/x6txy/go2024/finalproject/model"
-
-)
-
-type Database struct {
-	DB *sql.DB
-}
-
-func NewDatabaseService(db *sql.DB) *Database {
-	return &Database{
-		DB: db,
-	}
-}
-
-// PostService
 
 type PostService struct {
 	*Database
@@ -31,6 +8,7 @@ func NewPostService(db *sql.DB) *PostService {
 		Database: NewDatabaseService(db),
 	}
 }
+
 
 func (cs *PostService) CreatePost(post *model.Post) (int, error) {
 	if err := cs.ensurePostTableExists(); err != nil {
@@ -110,42 +88,6 @@ func (cs *PostService) ensurePostTableExists() error {
 	_, err := cs.DB.Exec(query)
 	if err != nil {
 		return fmt.Errorf("failed to create 'posts' table: %w", err)
-	}
-
-	return nil
-}
-
-
-//CommentService
-
-type CommentService struct {
-	*Database
-}
-
-func NewCommentService(db *sql.DB) *CommentService {
-	return &CommentService{
-		Database: NewDatabaseService(db),
-	}
-}
-
-
-
-
-func (cm *CommentService) ensureCommentTableExists() error{
-	const query = `
-	CREATE TABLE IF NOT EXISTS comments (
-		id SERIAL PRIMARY KEY,
-		post_id INT,
-		date TIMESTAMP,
-		content TEXT, 
-		likes INT,
-		user_id INT,
-		FOREIGN KEY (post_id) REFERENCES posts(id)
-	);`
-
-	_, err := cm.DB.Exec(query)
-	if err != nil {
-		return fmt.Errorf("failed to create 'comments' table: %w", err)
 	}
 
 	return nil
