@@ -22,7 +22,7 @@ func setupRoutes(app *fiber.App) {
 	app.Get("/users/:id", handlers.JWTMiddleware, handlers.GetUsers)
 
 
-	app.Post("/comment", handlers.JWTMiddleware, handlers.CreateComment)
+	app.Post("/comment/:id", handlers.JWTMiddleware, handlers.CreateComment)
 	app.Get("/comment", handlers.ListComments)
 	app.Get("/comment/:id", handlers.GetComment)
 	app.Put("/comment/:id", handlers.JWTMiddleware, handlers.UpdateComment)

@@ -1,62 +1,63 @@
-# Final Project Golang 2024 Spring. Go Blog with Comments and Authentication
+# Final Project Golang 2024 Spring: Go Blog with Comments and Authentication
 
 This project is a simple blog application implemented in Go (Golang) that includes features such as CRUD operations for articles, comments, and user authentication.
 
 ## Author
 
-`Toleu Bahauddin 22B030598`
+- Toleu Bahauddin 22B030598
 
 ## Database Structure
 
 ### Users
 
 - `UserID` (Primary Key)
+- `Created_At` (TIMESTAMP WITH TIME ZONE NOT NULL)
+- `Update_At` (TIMESTAMP WITH TIME ZONE NOT NULL)
+- `Delete_At` (TIMESTAMP WITH TIME ZONE)
 - `Username`
 - `PasswordHash` (encrypted password)
-- Other fields like email, role, etc.
+- `Followers` (INT NOT NULL)
 
 ### Posts
 
 - `PostID` (Primary Key)
-- `Title`
-- `Content`
+- `Created_At` (TIMESTAMP WITH TIME ZONE NOT NULL)
+- `Update_At` (TIMESTAMP WITH TIME ZONE NOT NULL)
+- `Delete_At` (TIMESTAMP WITH TIME ZONE)
+- `Content` (TEXT NOT NULL)
+- `Likes` (INT NOT NULL)
 - `UserID` (Foreign Key, relation to Users)
-- `CreatedAt`
-- `UpdatedAt`
 
 ### Comments
 
 - `CommentID` (Primary Key)
-- `Content`
+- `Created_At` (TIMESTAMP WITH TIME ZONE NOT NULL)
+- `Update_At` (TIMESTAMP WITH TIME ZONE NOT NULL)
+- `Delete_At` (TIMESTAMP WITH TIME ZONE)
+- `Content` (TEXT NOT NULL)
+- `Likes` (INT NOT NULL)
 - `UserID` (Foreign Key, relation to Users)
 - `PostID` (Foreign Key, relation to Posts)
-- `CreatedAt`
-- `UpdatedAt`
 
 ## API Structure
 
-### Authentication and Registration
+### Authentication
 
-- Register a new user.
-- User login with token retrieval.
+#### Signup
 
-### Posts
+- **Method**: POST
+- **Endpoint**: `/signup`
+- **Body**:
 
-- Create a new post.
-- Retrieve a list of all posts.
-- Retrieve a specific post by ID.
-- Update an existing post.
-- Delete a post.
+  ```json
+  {
+    "username": "your_username",
+    "password": "your_password"
+  }
+  ```
 
-### Comments
 
-- Create a new comment for a specific post.
-- Retrieve all comments for a specific post.
-- Update an existing comment.
-- Delete a comment.
-
-### Authorization and Access Rights
-
-- Token validation and user authentication.
-- Implementation of roles (e.g., user and administrator).
-- Restrict access to certain operations based on roles.
+#### Signin
+- **Method**: POST
+- **Endpoint**: `/signin`
+- **Body**:

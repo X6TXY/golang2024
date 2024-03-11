@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/x6txy/golang2024/database"
 	"github.com/x6txy/golang2024/models"
@@ -8,12 +11,44 @@ import (
 
 func CreateComment(cp *fiber.Ctx) error {
 	comment := new(models.Comment)
+	postIDParam := cp.Params("id")
 	if err := cp.BodyParser(comment); err != nil {
-		return cp.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": err.Error(),
-		})
+		return cp.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Error parsing request body"})
 	}
-	database.DB.Db.Create(&comment)
+
+	postID, err := strconv.Atoi(postIDParam)
+	if err != nil {
+		return cp.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid post ID format"})
+	}
+
+	userIDInterface := cp.Locals("userID")
+	fmt.Printf("Extracted userIDInterface: %#v\n", userIDInterface)
+
+	if userIDInterface == nil {
+		fmt.Println("userIDInterface is nil. User ID was not set in context.")
+		return cp.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "User not authenticated"})
+	}
+
+	userID, ok := userIDInterface.(uint)
+	if !ok || userID == 0 {
+		fmt.Printf("Failed to assert userIDInterface to uint or userID is 0. userIDInterface actual value: %#v\n", userIDInterface)
+		return cp.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid user ID format or userID is 0"})
+	}
+
+	var post models.Post
+	if err := database.DB.Db.First(&post, postID).Error; err != nil {
+		return cp.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Post not found"})
+	}
+
+	comment.UserID = userID
+	comment.PostID = uint(postID)
+
+	if err := database.DB.Db.Create(&comment).Error; err != nil {
+		return cp.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Error saving the comment to the database", "error": err.Error()})
+	}
+
+	database.DB.Db.First(&comment.User, comment.UserID)
+	database.DB.Db.First(&comment.Post, comment.PostID)
 
 	return cp.Status(200).JSON(comment)
 }
