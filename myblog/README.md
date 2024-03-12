@@ -4,7 +4,7 @@ This project is a simple blog application implemented in Go (Golang) that includ
 
 ## Author
 
-- Toleu Bahauddin 22B030598
+<!-- - Toleu Bahauddin 22B030598 -->
 
 ## Database Structure
 
