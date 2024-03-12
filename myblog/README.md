@@ -6,38 +6,44 @@ This project is a simple blog application implemented in Go (Golang) that includ
 
 <!-- - Toleu Bahauddin 22B030598 -->
 
-## Database Structure
+## Database Models Overview
 
-### Users
+### User Model
 
-- `UserID` (Primary Key)
-- `Created_At` (TIMESTAMP WITH TIME ZONE NOT NULL)
-- `Update_At` (TIMESTAMP WITH TIME ZONE NOT NULL)
-- `Delete_At` (TIMESTAMP WITH TIME ZONE)
-- `Username`
-- `PasswordHash` (encrypted password)
-- `Followers` (INT NOT NULL)
+- **gorm.Model**: Inherits fields `ID`, `CreatedAt`, `UpdatedAt`, `DeletedAt` from GORM's base model.
+- **Username**: `string`, stores the username of the user.
+- **Password**: `string`, stores the encrypted password (not exported in JSON).
+- **Posts**: Slice of `Post`, represents a one-to-many relationship with `Post` (A user can have many posts). Uses `UserID` as the foreign key.
+- **Comments**: Slice of `Comment`, represents a one-to-many relationship with `Comment` (A user can author many comments). Uses `UserID` as the foreign key.
+- **Followers**: Slice of `User`, represents a many-to-many relationship with other `User` entities, indicating users who follow this user. Utilizes a join table `user_followers`, with `FollowingID` as the join foreign key and `FollowerID` as the join reference.
+- **Followings**: Slice of `User`, represents a many-to-many relationship with other `User` entities, indicating users this user follows. Utilizes the same join table `user_followers`, with `FollowerID` as the join foreign key and `FollowingID` as the join reference.
 
-### Posts
+### Post Model
 
-- `PostID` (Primary Key)
-- `Created_At` (TIMESTAMP WITH TIME ZONE NOT NULL)
-- `Update_At` (TIMESTAMP WITH TIME ZONE NOT NULL)
-- `Delete_At` (TIMESTAMP WITH TIME ZONE)
-- `Content` (TEXT NOT NULL)
-- `Likes` (INT NOT NULL)
-- `UserID` (Foreign Key, relation to Users)
+- **gorm.Model**: Inherits fields `ID`, `CreatedAt`, `UpdatedAt`, `DeletedAt`.
+- **Content**: `string`, stores the content of the post.
+- **UserID**: `uint`, foreign key linking back to the `User` who authored the post.
+- **User**: `User`, represents the many-to-one relationship with `User`.
+- **Comments**: Slice of `Comment`, represents a one-to-many relationship with `Comment` (A post can have many comments). Uses `PostID` as the foreign key.
+- **LikesCount**: `int`, not a database field (`gorm:"-"`) but used to store the count of likes a post has received.
 
-### Comments
+### Comment Model
 
-- `CommentID` (Primary Key)
-- `Created_At` (TIMESTAMP WITH TIME ZONE NOT NULL)
-- `Update_At` (TIMESTAMP WITH TIME ZONE NOT NULL)
-- `Delete_At` (TIMESTAMP WITH TIME ZONE)
-- `Content` (TEXT NOT NULL)
-- `Likes` (INT NOT NULL)
-- `UserID` (Foreign Key, relation to Users)
-- `PostID` (Foreign Key, relation to Posts)
+- **gorm.Model**: Inherits fields `ID`, `CreatedAt`, `UpdatedAt`, `DeletedAt`.
+- **Content**: `string`, stores the content of the comment.
+- **UserID**: `uint`, foreign key linking back to the `User` who authored the comment.
+- **PostID**: `uint`, foreign key linking to the `Post` the comment belongs to.
+- **LikesCount**: `int`, not a database field (`gorm:"-"`) but used to store the count of likes a comment has received.
+
+### PostLike Model
+
+- **UserID**: `uint`, part of a composite unique index with `PostID`, represents the user who liked the post.
+- **PostID**: `uint`, part of a composite unique index with `UserID`, represents the post that was liked.
+
+### CommentLike Model
+
+- **UserID**: `uint`, part of a composite unique index with `CommentID`, represents the user who liked the comment.
+- **CommentID**: `uint`, part of a composite unique index with `UserID`, represents the comment that was liked.
 
 ## Database Relationships
 
