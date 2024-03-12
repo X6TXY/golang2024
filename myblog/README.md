@@ -39,15 +39,39 @@ This project is a simple blog application implemented in Go (Golang) that includ
 - `UserID` (Foreign Key, relation to Users)
 - `PostID` (Foreign Key, relation to Posts)
 
-### Database Relations
+## Database Relationships
 
-- User - Post: `One-to-Many` (User has many Posts)
-- Post - Comment: `One-to-Many` (Post has many Comments)
-- User - Comment: `One-to-Many` (User has many Comments)
-- Post - User: `Many-to-One` (Many Posts belong to one User)
-- Comment - User: `Many-to-One` (Many Comments belong to one User)
-- Post - PostLike: `Many-to-Many` (Posts can have many Likes and Users can like many Posts)
-- Comment - CommentLike: `Many-to-Many` (Comments can have many Likes and Users can like many Comments)
+### User - Post (One-to-Many)
+
+A user can have many posts. This is represented by the `Posts` slice in the `User` struct, with a `foreignKey` tag pointing to `UserID` in the `Post` struct, indicating that multiple posts can belong to a single user.
+
+### Post - Comment (One-to-Many)
+
+A post can have many comments. This relationship is shown by the `Comments` slice in the `Post` struct, with a `foreignKey` tag pointing to `PostID` in the `Comment` struct, indicating that multiple comments can be associated with a single post.
+
+### User - Comment (One-to-Many)
+
+A user can have many comments. This is represented similarly to posts, where the `Comments` slice in the `User` struct has a `foreignKey` pointing to `UserID` in the `Comment` struct, indicating a user can author multiple comments.
+
+### Post - User (Many-to-One)
+
+Many posts belong to one user. This inverse relationship of the first point is represented by the `User` field in the `Post` struct, which points back to the owning user. The `foreignKey:UserID` indicates the association's direction.
+
+### Comment - User (Many-to-One)
+
+Many comments belong to one user. Similar to posts, this is the inverse relationship of the third point, where each `Comment` struct has a `User` field pointing back to the commenter.
+
+### Post - PostLike (Many-to-Many)
+
+Posts can have many likes from users, and users can like many posts. This is represented by the `PostLike` struct, which creates a many-to-many relationship between posts and users through a composite unique index on `UserID` and `PostID`.
+
+### Comment - CommentLike (Many-to-Many)
+
+Comments can have many likes, and users can like many comments, similarly managed by the `CommentLike` struct, indicating a many-to-many relationship between comments and users with a unique composite index on `UserID` and `CommentID`.
+
+### User - User (Followers/Followings) (Many-to-Many)
+
+This is a self-referencing many-to-many relationship where users can follow and be followed by many other users. The `Followers` and `Followings` slices in the `User` struct represent this relationship through a join table (`user_followers`). The `many2many` tag specifies the name of the join table, and `joinForeignKey`/`JoinReferences` tags specify the columns in the join table representing the following and follower users, respectively.
 
 ## API Structure
 
@@ -95,6 +119,16 @@ Delete User by ID (protected)
 
 - **Method**: DELETE
 - **Endpoint**: `/users/:id`
+
+Follow User (protected)
+
+- **Method**: POST
+- **Endpoint**: `/users/:id/follow`
+
+Unfollow User (protected)
+
+- **Method**: POST
+- **Endpoint**: `/users/:id/unfollow`
 
 #### Posts
 

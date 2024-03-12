@@ -4,11 +4,12 @@ import "gorm.io/gorm"
 
 type User struct {
 	gorm.Model
-	Username  string    `json:"username"`
-	Password  string    `json:"-"`
-	// Followers int       `json:"followers"`
-	Posts     []Post    `json:"posts" gorm:"foreignKey:UserID"`
-	Comments  []Comment `json:"comments"`
+	Username   string    `json:"username"`
+	Password   string    `json:"-"`
+	Posts      []Post    `json:"posts" gorm:"foreignKey:UserID"`
+	Comments   []Comment `json:"comments"`
+	Followers  []*User   `json:"followers" gorm:"many2many:user_followers;joinForeignKey:FollowingID;JoinReferences:FollowerID"`
+	Followings []*User   `json:"followings" gorm:"many2many:user_followers;joinForeignKey:FollowerID;JoinReferences:FollowingID"`
 }
 
 type Post struct {

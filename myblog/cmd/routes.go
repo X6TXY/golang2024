@@ -21,6 +21,8 @@ func setupRoutes(app *fiber.App) {
 	app.Get("/users", handlers.JWTMiddleware, handlers.ListUsers)
 	app.Get("/users/:id", handlers.JWTMiddleware, handlers.GetUsers)
 	app.Delete("/users/:id", handlers.JWTMiddleware, handlers.DeleteUser)
+	app.Post("/users/:id/follow", handlers.JWTMiddleware, handlers.FollowUser)
+	app.Post("/users/:id/unfollow", handlers.JWTMiddleware, handlers.UnfollowUser)
 
 	
 	app.Post("/comment/:id", handlers.JWTMiddleware, handlers.CreateComment)

@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"time"
+	"strconv"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
@@ -10,10 +11,8 @@ import (
 	"github.com/x6txy/golang2024/models"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-
 )
 
-// JWT secret key (replace with a strong, unique key)
 var jwtSecret = []byte("your-secret-key")
 
 func Signup(c *fiber.Ctx) error {
@@ -88,7 +87,7 @@ func Signin(c *fiber.Ctx) error {
 func ListUsers(c *fiber.Ctx) error {
 	var users []models.User
 
-	if err := database.DB.Db.Preload("Posts").Preload("Posts.Comments").Preload("Comments").Find(&users).Error; err != nil {
+	if err := database.DB.Db.Preload("Posts").Preload("Posts.Comments").Preload("Comments").Preload("Followers").Preload("Followings").Find(&users).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Error retrieving users"})
 	}
 
@@ -123,11 +122,12 @@ func ListUsers(c *fiber.Ctx) error {
 
 	return c.Status(200).JSON(users)
 }
+
 func GetUsers(c *fiber.Ctx) error {
 	userID := c.Params("id")
 	var user models.User
 
-	if err := database.DB.Db.First(&user, userID).Error; err != nil {
+	if err := database.DB.Db.Preload("Followers").Preload("Followings").First(&user, userID).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "User not found",
 		})
@@ -135,8 +135,6 @@ func GetUsers(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(user)
 }
-
-
 
 func DeleteUser(c *fiber.Ctx) error {
 	userID := c.Params("id")
@@ -162,4 +160,60 @@ func DeleteUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "User deleted successfully",
 	})
+}
+
+func FollowUser(c *fiber.Ctx) error {
+    followerIDInterface := c.Locals("userID")
+    if followerIDInterface == nil {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "User not authenticated"})
+    }
+    followerID := followerIDInterface.(uint) // Assuming userID is stored as uint
+
+    followingIDParam := c.Params("id")
+    followingID, err := strconv.ParseUint(followingIDParam, 10, 32)
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid user ID"})
+    }
+
+    if followerID == uint(followingID) {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Cannot follow yourself"})
+    }
+
+    var follower, following models.User
+    if err := database.DB.Db.First(&follower, followerID).Error; err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Follower not found"})
+    }
+
+    if err := database.DB.Db.First(&following, followingID).Error; err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "User to follow not found"})
+    }
+
+    database.DB.Db.Model(&follower).Association("Followings").Append(&following)
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Followed successfully"})
+}
+
+func UnfollowUser(c *fiber.Ctx) error {
+	followerID := c.Locals("userID")
+	if followerID == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "User not authenticated"})
+	}
+
+	unfollowingID := c.Params("id")
+	if followerID == unfollowingID {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Cannot unfollow yourself"})
+	}
+
+	var follower, unfollowing models.User
+	if err := database.DB.Db.First(&follower, followerID).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Follower not found"})
+	}
+
+	if err := database.DB.Db.First(&unfollowing, unfollowingID).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "User to unfollow not found"})
+	}
+
+	database.DB.Db.Model(&follower).Association("Followings").Delete(&unfollowing)
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Unfollowed successfully"})
 }
