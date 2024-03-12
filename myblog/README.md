@@ -71,8 +71,20 @@ This project is a simple blog application implemented in Go (Golang) that includ
 
 #### Users
 
+Get Users List (protected)
+
 - **Method**: GET
 - **Endpoint**: `/users`
+
+Get User by ID (protected)
+
+- **Method**: GET
+- **Endpoint**: `/users/:id`
+
+Delete User by ID (protected)
+
+- **Method**: DELETE
+- **Endpoint**: `/users/:id`
 
 #### Posts
 
@@ -114,6 +126,16 @@ Delete post(protected)
 - **Method**: DELETE
 - **Endpoint**: `/post/:id`
 
+Like post(protected)
+
+- **Method**: POST
+- **Endpoint**: `/post/:id/like`
+
+Unlike post(protected)
+
+- **Method**: POST
+- **Endpoint**: `/post/:id/unlike`
+
 #### Comments
 
 Create comment(protected)
@@ -153,3 +175,13 @@ Delete comment(protected)
 
 - **Method**: DELETE
 - **Endpoint**: `/comment/:id`
+
+Like comment(protected)
+
+- **Method**: POST
+- **Endpoint**: `/comment/:id/like`
+
+Unlike comment(protected)
+
+- **Method**: POST
+- **Endpoint**: `/comment/:id/unlike`

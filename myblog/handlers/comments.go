@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/x6txy/golang2024/database"
 	"github.com/x6txy/golang2024/models"
+	"gorm.io/gorm"
 )
 
 func CreateComment(cp *fiber.Ctx) error {
@@ -47,9 +49,6 @@ func CreateComment(cp *fiber.Ctx) error {
 		return cp.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Error saving the comment to the database", "error": err.Error()})
 	}
 
-	database.DB.Db.First(&comment.User, comment.UserID)
-	database.DB.Db.First(&comment.Post, comment.PostID)
-
 	return cp.Status(200).JSON(comment)
 }
 
@@ -57,6 +56,14 @@ func ListComments(c *fiber.Ctx) error {
 	comment := []models.Comment{}
 
 	database.DB.Db.Find(&comment)
+
+	for i := range comment {
+		var likesCount int64
+		if err := database.DB.Db.Model(&models.CommentLike{}).Where("comment_id = ?", comment[i].ID).Count(&likesCount).Error; err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Error fetching likes count"})
+		}
+		comment[i].LikesCount = int(likesCount)
+	}
 
 	return c.Status(200).JSON(comment)
 }
@@ -70,6 +77,10 @@ func GetComment(c *fiber.Ctx) error {
 			"message": "Comment not found",
 		})
 	}
+
+	var count int64
+	database.DB.Db.Model(&models.CommentLike{}).Where("comment_id = ?", comment.ID).Count(&count)
+	comment.LikesCount = int(count)
 
 	return c.Status(fiber.StatusOK).JSON(comment)
 }
@@ -107,8 +118,78 @@ func UpdateComment(c *fiber.Ctx) error {
 		})
 	}
 
-	// Update only the specified fields (you can customize this based on your requirements)
 	database.DB.Db.Model(&existingComment).Updates(newComment)
 
 	return c.Status(fiber.StatusOK).JSON(existingComment)
+}
+
+func LikeComment(c *fiber.Ctx) error {
+	commentIDParam := c.Params("id")
+	userIDInterface := c.Locals("userID")
+
+	if userIDInterface == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "User not authenticated"})
+	}
+
+	userID, ok := userIDInterface.(uint)
+	if !ok || userID == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid user ID"})
+	}
+
+	commentID, err := strconv.ParseUint(commentIDParam, 10, 32)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid comment ID"})
+	}
+
+	var existingLike models.CommentLike
+	result := database.DB.Db.Where("user_id = ? AND comment_id = ?", userID, commentID).First(&existingLike)
+
+	if result.Error == nil {
+		return c.Status(fiber.StatusAlreadyReported).JSON(fiber.Map{"message": "User has already liked this comment"})
+	} else if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Error checking for existing like", "error": result.Error.Error()})
+	}
+
+	newLike := models.CommentLike{
+		UserID:    userID,
+		CommentID: uint(commentID),
+	}
+
+	if err := database.DB.Db.Create(&newLike).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not like the comment", "error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Comment liked successfully"})
+}
+
+func UnlikeComment(c *fiber.Ctx) error {
+	commentIDParam := c.Params("id")
+	userIDInterface := c.Locals("userID")
+
+	if userIDInterface == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "User not authenticated"})
+	}
+
+	userID, ok := userIDInterface.(uint)
+	if !ok || userID == 0 {
+
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid user ID"})
+	}
+
+	commentID, err := strconv.ParseUint(commentIDParam, 10, 32)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid comment ID"})
+	}
+
+	var commentlike models.CommentLike
+
+	if err := database.DB.Db.Where("user_id = ? AND comment_id = ?", userID, commentID).First(&commentlike).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Like not found"})
+	}
+
+	if err := database.DB.Db.Where("user_id = ? AND comment_id = ?", userID, commentID).Delete(&models.CommentLike{}).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not unlike the comment", "error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Comment unliked successfully"})
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/x6txy/golang2024/models"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+
 )
 
 // JWT secret key (replace with a strong, unique key)
@@ -69,7 +70,7 @@ func Signin(c *fiber.Ctx) error {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["username"] = user.Username
-	claims["userID"] = user.ID 
+	claims["userID"] = user.ID
 	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 
 	tokenString, err := token.SignedString(jwtSecret)
@@ -85,12 +86,43 @@ func Signin(c *fiber.Ctx) error {
 }
 
 func ListUsers(c *fiber.Ctx) error {
-	users := []models.User{}
+	var users []models.User
 
-	database.DB.Db.Find(&users)
+	if err := database.DB.Db.Preload("Posts").Preload("Posts.Comments").Preload("Comments").Find(&users).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Error retrieving users"})
+	}
+
+	for i := range users {
+		for j := range users[i].Posts {
+			var likesCount int64
+			if err := database.DB.Db.Model(&models.PostLike{}).Where("post_id = ?", users[i].Posts[j].ID).Count(&likesCount).Error; err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Error retrieving likes count for posts"})
+			}
+			users[i].Posts[j].LikesCount = int(likesCount)
+
+			for k := range users[i].Posts[j].Comments {
+
+				var commentLikesCount int64
+				if err := database.DB.Db.Model(&models.CommentLike{}).Where("comment_id = ?", users[i].Posts[j].Comments[k].ID).Count(&commentLikesCount).Error; err != nil {
+					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Error retrieving likes count for comments"})
+				}
+				users[i].Posts[j].Comments[k].LikesCount = int(commentLikesCount)
+			}
+		}
+	}
+
+	for i := range users {
+		for j := range users[i].Comments {
+			var likesCount int64
+			if err := database.DB.Db.Model(&models.CommentLike{}).Where("comment_id = ?", users[i].Comments[j].ID).Count(&likesCount).Error; err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Error retrieving likes count for comments"})
+			}
+			users[i].Comments[j].LikesCount = int(likesCount)
+		}
+	}
+
 	return c.Status(200).JSON(users)
 }
-
 func GetUsers(c *fiber.Ctx) error {
 	userID := c.Params("id")
 	var user models.User
@@ -102,4 +134,32 @@ func GetUsers(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(user)
+}
+
+
+
+func DeleteUser(c *fiber.Ctx) error {
+	userID := c.Params("id")
+	var user models.User
+
+	if err := database.DB.Db.First(&user, userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "User not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Error querying the database",
+		})
+	}
+
+	if err := database.DB.Db.Delete(&user, userID).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Error deleting user",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "User deleted successfully",
+	})
 }

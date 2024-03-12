@@ -42,6 +42,9 @@ func ConnectDb() {
 	db.AutoMigrate(&models.Post{})
 	db.AutoMigrate(&models.User{})
 	db.AutoMigrate(&models.Comment{})
+	db.AutoMigrate(&models.PostLike{})
+	db.AutoMigrate(&models.CommentLike{})
+	
 
 	DB = Dbinstance{
 		Db: db,
