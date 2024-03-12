@@ -38,3 +38,4 @@ type CommentLike struct {
 	CommentID uint `gorm:"index:idx_user_comment,uniqueIndex" json:"comment_id"`
 }
 
+

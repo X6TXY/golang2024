@@ -185,3 +185,13 @@ Unlike comment(protected)
 
 - **Method**: POST
 - **Endpoint**: `/comment/:id/unlike`
+
+#### Database Relations
+
+- User - Post: One-to-Many (User has many Posts)
+- Post - Comment: One-to-Many (Post has many Comments)
+- User - Comment: One-to-Many (User has many Comments)
+- Post - User: Many-to-One (Many Posts belong to one User)
+- Comment - User: Many-to-One (Many Comments belong to one User)
+- Post - PostLike: Many-to-Many (Posts can have many Likes and Users can like many Posts)
+- Comment - CommentLike: Many-to-Many (Comments can have many Likes and Users can like many Comments)
